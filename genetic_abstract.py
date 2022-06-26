@@ -1,5 +1,6 @@
 from abc import abstractmethod, ABC
 from random import choice,randint,random
+from datetime import datetime
 
 class genetic_abstract(ABC):
 
@@ -22,35 +23,42 @@ class genetic_abstract(ABC):
     def evaluate_fitness(self):
         pass
 
+
 class genetic_algorithm:
 
-    def __init__(self, first_population_generator: callable, selection_model: callable, stop_condition: callable, mutation_probability: float = 0.1):
+    def __init__(self, first_population_generator: callable, selection_model: callable, stop_condition: callable):
         self.first_generation_func = first_population_generator
         self.selection_model = selection_model
         self.stop_condition = stop_condition
-        self.mutation_probability = mutation_probability
 
     def run(self):
+        print(f'Algorithm begun at {datetime.now()}')
+        start_time = datetime.now()
+        besties = list()
+        print('First population generation...',end='')
+        start_popgen = datetime.now()
         population = self.first_generation_func()
-        population.sort(key = lambda x: x.fitness)
+        print(f' Done at {datetime.now()}. Finished in {datetime.now() - start_popgen}.')
+        #population.sort(key = lambda x: x.fitness)
         population_len = len(population)
         i = 0
-
+        
         while True:
+            start_epoch = datetime.now()
+            i+=1
             new_population = self.selection_model(population)
             while len(new_population) != population_len:
                 child = choice(population).crossover(choice(population))
-                if random() <= self.mutation_probability:
-                    child.mutation()
+                child.mutation()
                 new_population.append(child)
 
             population = new_population
             best_one = min(population, key = lambda x: x.fitness)
-            print(f"Generacja: {i} => dopasowanie: {best_one.fitness}.")
-            #print(best_one)
-            i+=1
-            if self.stop_condition(best_one, best_one.fitness, i):
-                break
+            besties.append(best_one)
+            print(f"\rGeneration: {i} => fitness: {best_one.fitness:.4f}. Finished in {datetime.now() - start_epoch}.",end='')
+            if self.stop_condition(besties):
+                return best_one
+        print(f'Algorithm finished at {datetime.now()}. Total wall time: {datetime.now() - start_time}.')
 
 def elite_selection_model(generation):
     return sorted(generation, key = lambda x: x.fitness)[:int(len(generation) / 10)]
